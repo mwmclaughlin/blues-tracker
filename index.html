@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Blues Tracker">
+  <meta name="theme-color" content="#1a1008">
+  <title>Blues Guitar Tracker</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #100c06;
+      --bg2: #1c1508;
+      --bg3: #261d0d;
+      --card: #201810;
+      --card2: #2a2010;
+      --border: #3d2e14;
+      --gold: #c8922a;
+      --gold2: #e6b44a;
+      --amber: #d47a1a;
+      --text: #f0e6d0;
+      --text2: #a89070;
+      --text3: #6e5a3e;
+      --green: #3d8c5a;
+      --green-bg: #1a3324;
+      --red: #b04040;
+      --red-bg: #2e1a1a;
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; }
+
+    body { overflow-x: hidden; }
+
+    /* ---- TOP NAV ---- */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: env(safe-area-inset-top, 0) 0 0;
+    }
+    .topbar-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px;
+    }
+    .app-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; color: var(--gold2); letter-spacing: 0.01em; }
+    .app-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+    /* ---- WEEK NAV ---- */
+    .week-nav {
+      display: flex; align-items: center; gap: 0;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); overflow: hidden;
+    }
+    .week-nav button {
+      background: none; border: none; color: var(--gold); cursor: pointer;
+      padding: 8px 14px; font-size: 18px; display: flex; align-items: center;
+    }
+    .week-nav button:active { background: var(--bg3); }
+    .week-num { font-size: 13px; font-weight: 500; color: var(--text); min-width: 52px; text-align: center; padding: 0 4px; }
+
+    /* ---- PHASE BANNER ---- */
+    .phase-banner {
+      margin: 0 16px 0;
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 500;
+      border: 1px solid;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .phase-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ---- SCROLLABLE CONTENT ---- */
+    .scroll-content {
+      padding: 16px 16px calc(env(safe-area-inset-bottom, 0px) + 100px);
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    /* ---- STAT ROW ---- */
+    .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; text-align: center; }
+    .stat-val { font-size: 22px; font-weight: 500; color: var(--gold2); font-family: 'Playfair Display', serif; }
+    .stat-lbl { font-size: 10px; color: var(--text3); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    /* ---- SECTION HEADER ---- */
+    .sec-hd { font-size: 10px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; padding: 0 2px; }
+
+    /* ---- DAYS ---- */
+    .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .day-btn {
+      aspect-ratio: 1; border-radius: var(--radius-sm); border: 1px solid var(--border);
+      background: var(--card); color: var(--text3); font-size: 11px; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .day-btn.on { background: var(--green-bg); border-color: var(--green); color: #7dcca0; }
+    .day-btn:active { transform: scale(0.93); }
+
+    /* ---- THUMB TOGGLE ---- */
+    .thumb-row {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+    }
+    .thumb-icon { font-size: 20px; }
+    .thumb-lbl { flex: 1; font-size: 13px; color: var(--text2); }
+    .thumb-btns { display: flex; gap: 6px; }
+    .thumb-btn {
+      padding: 6px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+      background: var(--card2); color: var(--text3); font-size: 12px; font-weight: 500; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .thumb-btn.on-no { background: var(--green-bg); border-color: var(--green); color: #7dcca0; }
+    .thumb-btn.on-yes { background: var(--red-bg); border-color: var(--red); color: #e08080; }
+    .thumb-btn:active { transform: scale(0.95); }
+
+    /* ---- RESOURCES ---- */
+    .res-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+    .res-btn {
+      padding: 7px 14px; border-radius: 20px; border: 1px solid var(--border);
+      background: var(--card); color: var(--text3); font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .res-btn.on { background: rgba(200,146,42,0.12); border-color: var(--gold); color: var(--gold2); }
+    .res-btn:active { transform: scale(0.95); }
+
+    /* ---- CATEGORIES ---- */
+    .cat-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 14px;
+    }
+    .cat-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+    .cat-name { font-size: 14px; font-weight: 500; color: var(--text); }
+    .cat-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+    .cat-score-lbl { font-size: 12px; color: var(--text3); }
+    .cat-score-val { font-size: 18px; font-weight: 600; color: var(--gold2); font-family: 'Playfair Display', serif; text-align: right; }
+    .cat-rating-lbl { font-size: 10px; color: var(--text3); text-align: right; }
+    .stars { display: flex; gap: 5px; margin: 10px 0 8px; }
+    .star {
+      flex: 1; height: 38px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+      background: var(--card2); color: var(--text3); font-size: 13px; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .star.on { background: rgba(200,146,42,0.18); border-color: var(--gold); color: var(--gold2); }
+    .star:active { transform: scale(0.92); }
+    .bar-bg { height: 3px; background: var(--bg3); border-radius: 2px; overflow: hidden; margin-bottom: 10px; }
+    .bar-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--amber), var(--gold2)); transition: width 0.3s; }
+    .cat-note {
+      width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 10px;
+      resize: none; outline: none;
+    }
+    .cat-note:focus { border-color: var(--gold); }
+    .cat-note::placeholder { color: var(--text3); }
+
+    /* ---- MILESTONES ---- */
+    .ms-item {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 12px 14px; display: flex; align-items: flex-start; gap: 12px; cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .ms-item.done { border-color: var(--green); }
+    .ms-item.dim { opacity: 0.35; }
+    .ms-check {
+      width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid var(--border);
+      background: var(--bg2); flex-shrink: 0; margin-top: 1px;
+      display: flex; align-items: center; justify-content: center; font-size: 13px;
+    }
+    .ms-item.done .ms-check { background: var(--green-bg); border-color: var(--green); }
+    .ms-phase { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+    .ms-text { font-size: 13px; color: var(--text); line-height: 1.4; }
+
+    /* ---- REFLECTION ---- */
+    .reflection {
+      width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 14px;
+      resize: none; outline: none; min-height: 90px;
+    }
+    .reflection:focus { border-color: var(--gold); }
+    .reflection::placeholder { color: var(--text3); }
+
+    /* ---- SUBMIT BUTTON ---- */
+    .submit-btn {
+      width: 100%; padding: 16px; border-radius: var(--radius);
+      background: linear-gradient(135deg, #8c5e10, var(--gold));
+      border: none; color: #1a0e00; font-family: 'DM Sans', sans-serif;
+      font-size: 15px; font-weight: 500; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all 0.2s; box-shadow: 0 4px 20px rgba(200,146,42,0.2);
+    }
+    .submit-btn:active { transform: scale(0.98); box-shadow: none; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ---- TOAST ---- */
+    .toast {
+      position: fixed; bottom: calc(env(safe-area-inset-bottom, 0px) + 20px); left: 50%; transform: translateX(-50%) translateY(80px);
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 12px 20px; font-size: 13px; color: var(--text); z-index: 999;
+      transition: transform 0.3s ease; white-space: nowrap; box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { border-color: var(--green); color: #7dcca0; }
+    .toast.error { border-color: var(--red); color: #e08080; }
+
+    /* ---- AUTH SCREEN ---- */
+    .auth-screen {
+      min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 32px 24px; text-align: center; gap: 20px;
+    }
+    .auth-logo { font-family: 'Playfair Display', serif; font-size: 48px; color: var(--gold2); line-height: 1; }
+    .auth-title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--text); }
+    .auth-sub { font-size: 14px; color: var(--text2); line-height: 1.6; max-width: 300px; }
+    .auth-input {
+      width: 100%; max-width: 340px; background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--text); font-family: 'DM Sans', sans-serif;
+      font-size: 14px; padding: 14px 16px; outline: none;
+    }
+    .auth-input:focus { border-color: var(--gold); }
+    .auth-input::placeholder { color: var(--text3); }
+    .auth-btn {
+      width: 100%; max-width: 340px; padding: 14px; border-radius: var(--radius);
+      background: linear-gradient(135deg, #8c5e10, var(--gold));
+      border: none; color: #1a0e00; font-family: 'DM Sans', sans-serif;
+      font-size: 15px; font-weight: 500; cursor: pointer;
+    }
+    .auth-note { font-size: 11px; color: var(--text3); max-width: 300px; line-height: 1.5; }
+
+    /* ---- DIVIDER ---- */
+    .divider { height: 1px; background: var(--border); margin: 4px 0; }
+  </style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen" class="auth-screen" style="display:none">
+  <div class="auth-logo">♪</div>
+  <div>
+    <div class="auth-title">Blues Tracker</div>
+    <div style="font-size:13px;color:var(--text3);margin-top:4px;">Michael McLaughlin</div>
+  </div>
+  <div class="auth-sub">To save your practice data to Google Sheets, enter your API key below.</div>
+  <input class="auth-input" id="api-key-input" type="password" placeholder="Google Sheets API key" autocomplete="off">
+  <div class="auth-sub" style="font-size:12px">Also confirm your Spreadsheet ID:</div>
+  <input class="auth-input" id="sheet-id-input" type="text" placeholder="Spreadsheet ID" value="1-dRcM67SZbKDfmpQtyiyTZ2Qkc-jPObO58RRpdx670M">
+  <button class="auth-btn" onclick="saveAuth()">Save & Continue</button>
+  <div class="auth-note">Your key is stored only on this device. It is never sent anywhere except directly to Google's API.</div>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app" style="display:none">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div>
+        <div class="app-title">♪ Blues Tracker</div>
+        <div class="app-sub">Michael McLaughlin</div>
+      </div>
+      <div class="week-nav">
+        <button onclick="changeWeek(-1)">‹</button>
+        <div class="week-num" id="wk-label">Wk 1</div>
+        <button onclick="changeWeek(1)">›</button>
+      </div>
+    </div>
+    <div id="phase-banner" class="phase-banner" style="margin-bottom:12px">
+      <div class="phase-dot" id="phase-dot"></div>
+      <span id="phase-text"></span>
+    </div>
+  </div>
+
+  <!-- SCROLLABLE CONTENT -->
+  <div class="scroll-content">
+
+    <!-- STATS -->
+    <div class="stat-row">
+      <div class="stat"><div class="stat-val" id="s-days">0</div><div class="stat-lbl">Days</div></div>
+      <div class="stat"><div class="stat-val" id="s-rated">0</div><div class="stat-lbl">Rated</div></div>
+      <div class="stat"><div class="stat-val" id="s-avg">—</div><div class="stat-lbl">Avg score</div></div>
+    </div>
+
+    <!-- DAYS -->
+    <div>
+      <div class="sec-hd" style="margin-bottom:10px">Days practiced</div>
+      <div class="days-grid" id="days-grid"></div>
+    </div>
+
+    <!-- THUMB -->
+    <div class="thumb-row">
+      <div class="thumb-icon">👍</div>
+      <div class="thumb-lbl">Right thumb pain?</div>
+      <div class="thumb-btns">
+        <button class="thumb-btn" id="tb-no" onclick="setThumb(false)">No</button>
+        <button class="thumb-btn" id="tb-yes" onclick="setThumb(true)">Yes</button>
+      </div>
+    </div>
+
+    <!-- RESOURCES -->
+    <div>
+      <div class="sec-hd" style="margin-bottom:10px">Resources used this week</div>
+      <div class="res-wrap" id="res-wrap"></div>
+    </div>
+
+    <!-- CATEGORIES -->
+    <div>
+      <div class="sec-hd" style="margin-bottom:10px">Category ratings &nbsp;<span style="font-weight:400;font-size:10px;opacity:0.6">1 = starting · 5 = confident</span></div>
+      <div id="cats-container" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+
+    <!-- MILESTONES -->
+    <div>
+      <div class="sec-hd" style="margin-bottom:10px">Phase milestones</div>
+      <div id="ms-container" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+
+    <!-- REFLECTION -->
+    <div>
+      <div class="sec-hd" style="margin-bottom:10px">Weekly reflection</div>
+      <textarea class="reflection" id="reflection" rows="4" placeholder="What clicked? What needs work? Any breakthroughs?"></textarea>
+    </div>
+
+    <!-- SUBMIT -->
+    <button class="submit-btn" id="submit-btn" onclick="submitWeek()">
+      <span>💾</span> Save to Google Sheets
+    </button>
+
+    <div style="text-align:center;font-size:11px;color:var(--text3);padding-bottom:8px">
+      <span style="cursor:pointer;text-decoration:underline" onclick="showAuth()">Change API settings</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const CATS=[
+  {id:1,name:"Fingerpicking",sub:"Mechanics & hand position"},
+  {id:2,name:"Rhythm & feel",sub:"Shuffle, swing, time"},
+  {id:3,name:"Blues form",sub:"12-bar, turnarounds"},
+  {id:4,name:"Chord voicings",sub:"Dom7, partials, blues shapes"},
+  {id:5,name:"Bass lines",sub:"Alternating bass, walking"},
+  {id:6,name:"Lead melody",sub:"Single-note, phrasing"},
+  {id:7,name:"Licks & vocab",sub:"Slides, bends, idioms"},
+  {id:8,name:"Repertoire",sub:"Songs learned & polished"},
+  {id:9,name:"Ear training",sub:"Transcription, listening"},
+  {id:10,name:"Theory",sub:"Scales, keys, chord function"}
+];
+const MILESTONES=[
+  {id:"m1",phase:1,text:"Steady alternating bass through 12-bar in E, A, G — no breaks"},
+  {id:"m2",phase:2,text:"2 complete songs with bass and melody layered"},
+  {id:"m3",phase:3,text:"4–5 songs in repertoire; improvise a 12-bar solo over own bass"},
+  {id:"m4",phase:4,text:"8–10 songs from memory with consistent feel; record yourself"}
+];
+const RESOURCES=["BGI","Paul Davids","Griff Hamlin","Justin Sandercoe","Joe Murphy","YouTube","Other"];
+const PHASE_INFO=[null,
+  {label:"Phase 1 · Foundation",color:"#4a90d9",bg:"rgba(74,144,217,0.08)",border:"rgba(74,144,217,0.3)"},
+  {label:"Phase 2 · Vocabulary",color:"#3db87a",bg:"rgba(61,184,122,0.08)",border:"rgba(61,184,122,0.3)"},
+  {label:"Phase 3 · Integration",color:"#e0a030",bg:"rgba(224,160,48,0.08)",border:"rgba(224,160,48,0.3)"},
+  {label:"Phase 4 · Performance",color:"#e06060",bg:"rgba(224,96,96,0.08)",border:"rgba(224,96,96,0.3)"}
+];
+const RLABELS=["","just starting","building","getting it","feeling solid","confident"];
+const SHEET_ID="1-dRcM67SZbKDfmpQtyiyTZ2Qkc-jPObO58RRpdx670M";
+
+let week=1,appData={};
+
+function wd(){if(!appData[week])appData[week]={ratings:{},catNotes:{},days:[],thumb:null,resources:[],notes:"",milestones:{}};return appData[week];}
+function phase(){if(week<=13)return 1;if(week<=26)return 2;if(week<=39)return 3;return 4;}
+
+function init(){
+  const apiKey=localStorage.getItem("bt_api_key");
+  const savedData=localStorage.getItem("bt_data");
+  const savedWeek=localStorage.getItem("bt_week");
+  if(savedData)try{appData=JSON.parse(savedData);}catch(e){}
+  if(savedWeek)week=parseInt(savedWeek)||1;
+  if(!apiKey){showAuth();return;}
+  document.getElementById("auth-screen").style.display="none";
+  document.getElementById("main-app").style.display="block";
+  render();
+}
+
+function showAuth(){
+  document.getElementById("main-app").style.display="none";
+  document.getElementById("auth-screen").style.display="flex";
+  const k=localStorage.getItem("bt_api_key");
+  if(k)document.getElementById("api-key-input").value=k;
+}
+
+function saveAuth(){
+  const k=document.getElementById("api-key-input").value.trim();
+  const sid=document.getElementById("sheet-id-input").value.trim();
+  if(!k){showToast("Please enter an API key","error");return;}
+  localStorage.setItem("bt_api_key",k);
+  if(sid)localStorage.setItem("bt_sheet_id",sid);
+  document.getElementById("auth-screen").style.display="none";
+  document.getElementById("main-app").style.display="block";
+  render();
+}
+
+function save(){
+  wd().notes=document.getElementById("reflection").value;
+  localStorage.setItem("bt_data",JSON.stringify(appData));
+  localStorage.setItem("bt_week",week);
+}
+
+function render(){
+  const d=wd(),p=phase(),pi=PHASE_INFO[p];
+  document.getElementById("wk-label").textContent=`Wk ${week}`;
+  const pb=document.getElementById("phase-banner");
+  pb.style.background=pi.bg;pb.style.borderColor=pi.border;
+  document.getElementById("phase-dot").style.background=pi.color;
+  document.getElementById("phase-text").style.color=pi.color;
+  document.getElementById("phase-text").textContent=pi.label;
+  renderDays(d);renderThumb(d);renderResources(d);renderCats(d);renderMilestones(d,p);
+  document.getElementById("reflection").value=d.notes||"";
+  updateStats(d);
+}
+
+function renderDays(d){
+  const el=document.getElementById("days-grid");el.innerHTML="";
+  ["M","T","W","T","F","S","S"].forEach((lbl,i)=>{
+    const b=document.createElement("button");
+    b.className="day-btn"+(d.days.includes(i)?" on":"");
+    b.textContent=lbl;
+    b.onclick=()=>{const idx=d.days.indexOf(i);idx>-1?d.days.splice(idx,1):d.days.push(i);save();updateStats(wd());renderDays(wd());};
+    el.appendChild(b);
+  });
+}
+
+function renderThumb(d){
+  document.getElementById("tb-no").className="thumb-btn"+(d.thumb===false?" on-no":"");
+  document.getElementById("tb-yes").className="thumb-btn"+(d.thumb===true?" on-yes":"");
+}
+function setThumb(v){const d=wd();d.thumb=d.thumb===v?null:v;save();renderThumb(d);}
+
+function renderResources(d){
+  const el=document.getElementById("res-wrap");el.innerHTML="";
+  RESOURCES.forEach(r=>{
+    const b=document.createElement("button");
+    b.className="res-btn"+(d.resources.includes(r)?" on":"");
+    b.textContent=r;
+    b.onclick=()=>{const idx=d.resources.indexOf(r);idx>-1?d.resources.splice(idx,1):d.resources.push(r);save();renderResources(wd());};
+    el.appendChild(b);
+  });
+}
+
+function renderCats(d){
+  const el=document.getElementById("cats-container");el.innerHTML="";
+  CATS.forEach(cat=>{
+    const r=d.ratings[cat.id]||0;
+    const pct=r?Math.round((r/5)*100):0;
+    const div=document.createElement("div");div.className="cat-card";
+    div.innerHTML=`
+      <div class="cat-top">
+        <div><div class="cat-name">${cat.id}. ${cat.name}</div><div class="cat-sub">${cat.sub}</div></div>
+        <div style="text-align:right">
+          <div class="cat-score-val">${r||"—"}</div>
+          <div class="cat-rating-lbl">${r?RLABELS[r]:""}</div>
+        </div>
+      </div>
+      <div class="stars" id="st-${cat.id}"></div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+      <textarea class="cat-note" rows="2" placeholder="Notes for this category..." data-cat="${cat.id}">${d.catNotes[cat.id]||""}</textarea>
+    `;
+    el.appendChild(div);
+    const starsEl=div.querySelector(`#st-${cat.id}`);
+    [1,2,3,4,5].forEach(v=>{
+      const b=document.createElement("button");
+      b.className="star"+(r===v?" on":"");b.textContent=v;
+      b.onclick=()=>{wd().ratings[cat.id]=wd().ratings[cat.id]===v?0:v;save();renderCats(wd());updateStats(wd());};
+      starsEl.appendChild(b);
+    });
+    div.querySelector(`[data-cat="${cat.id}"]`).addEventListener("input",function(){wd().catNotes[cat.id]=this.value;save();});
+  });
+}
+
+function renderMilestones(d,p){
+  const el=document.getElementById("ms-container");el.innerHTML="";
+  MILESTONES.forEach(m=>{
+    const done=!!(d.milestones&&d.milestones[m.id]);
+    const current=m.phase===p;
+    const div=document.createElement("div");
+    div.className="ms-item"+(done?" done":"")+(current?"":" dim");
+    div.innerHTML=`
+      <div class="ms-check">${done?"✓":""}</div>
+      <div><div class="ms-phase">Phase ${m.phase} milestone</div><div class="ms-text">${m.text}</div></div>
+    `;
+    div.onclick=()=>{const d2=wd();if(!d2.milestones)d2.milestones={};d2.milestones[m.id]=!d2.milestones[m.id];save();renderMilestones(wd(),phase());};
+    el.appendChild(div);
+  });
+}
+
+function updateStats(d){
+  const ratings=Object.values(d.ratings).filter(r=>r>0);
+  document.getElementById("s-days").textContent=d.days.length;
+  document.getElementById("s-rated").textContent=`${ratings.length}/10`;
+  document.getElementById("s-avg").textContent=ratings.length?(ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1):"—";
+}
+
+function changeWeek(dir){
+  save();week=Math.max(1,Math.min(52,week+dir));render();}
+
+document.getElementById("reflection").addEventListener("input",function(){wd().notes=this.value;save();});
+
+// ---- GOOGLE SHEETS SUBMIT ----
+async function submitWeek(){
+  const apiKey=localStorage.getItem("bt_api_key");
+  const sheetId=localStorage.getItem("bt_sheet_id")||SHEET_ID;
+  if(!apiKey){showAuth();return;}
+  save();
+  const d=wd(),p=phase();
+  const ratings=Object.values(d.ratings).filter(r=>r>0);
+  const avg=ratings.length?(ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1):"";
+  const today=new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+  const milestoneDone=MILESTONES.filter(m=>d.milestones&&d.milestones[m.id]).map(m=>`P${m.phase}`).join(", ")||"";
+  const row=[
+    week, today, PHASE_INFO[p].label,
+    d.days.length,
+    d.ratings[1]||"", d.ratings[2]||"", d.ratings[3]||"", d.ratings[4]||"",
+    d.ratings[5]||"", d.ratings[6]||"", d.ratings[7]||"", d.ratings[8]||"",
+    d.ratings[9]||"", d.ratings[10]||"",
+    avg, milestoneDone,
+    d.thumb===true?"Yes":d.thumb===false?"No":"",
+    d.resources.join(", "),
+    d.notes||""
+  ];
+  const btn=document.getElementById("submit-btn");
+  btn.disabled=true;btn.innerHTML="<span>⏳</span> Saving...";
+  try{
+    const url=`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1!A:S:append?valueInputOption=USER_ENTERED&key=${apiKey}`;
+    const res=await fetch(url,{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({values:[row]})
+    });
+    if(!res.ok){
+      const err=await res.json();
+      throw new Error(err.error?.message||"API error");
+    }
+    showToast("✓ Saved to Google Sheets","success");
+  }catch(e){
+    console.error(e);
+    showToast("Error: "+e.message,"error");
+  }finally{
+    btn.disabled=false;btn.innerHTML="<span>💾</span> Save to Google Sheets";
+  }
+}
+
+function showToast(msg,type=""){
+  const t=document.getElementById("toast");
+  t.textContent=msg;t.className="toast"+(type?" "+type:"");
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),3000);
+}
+
+init();
+</script>
+</body>
+</html>
